@@ -1,0 +1,84 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "distance": 15.2,
+        "emissions": 3.5,
+        "time": 0.5,
+        "traffic_factor": 1.0,
+        "weather_factor": 1.0,
+        "elevation_gain": 50,
+        "road_type": "highway",
+        "speed_limit": 80
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -6.2489,
+            53.3531
+          ],
+          [
+            -6.3,
+            53.35
+          ],
+          [
+            -6.35,
+            53.345
+          ],
+          [
+            -6.4,
+            53.34
+          ],
+          [
+            -6.4513,
+            53.3359
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "start",
+        "name": "Connolly Station"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -6.2489,
+          53.3531
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "type": "end",
+        "name": "Adamstown"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -6.4513,
+          53.3359
+        ]
+      }
+    }
+  ],
+  "style": {
+    "route_color": "#8B0000",
+    "route_width": 4,
+    "start_color": "#006400",
+    "end_color": "#8B0000",
+    "point_radius": 6
+  },
+  "bounds": {
+    "min_lon": -6.4513,
+    "max_lon": -6.2489,
+    "min_lat": 53.3359,
+    "max_lat": 53.3531
+  }
+}

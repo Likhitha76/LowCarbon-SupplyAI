@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Route Visualization</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        #map {
+            height: 600px;
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+        .legend {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin: 10px;
+            font-weight: bold;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            padding: 5px;
+            border-radius: 4px;
+            background: #f8f8f8;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .legend-item:hover {
+            background: #e0e0e0;
+        }
+        .legend-item.active {
+            background: #d0d0d0;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        .color-box {
+            width: 25px;
+            height: 25px;
+            margin-right: 10px;
+            border-radius: 4px;
+            border: 2px solid #333;
+        }
+        .route-info {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin: 10px;
+        }
+        .route-info h4 {
+            margin: 0;
+            padding: 5px 0;
+            border-bottom: 2px solid #eee;
+        }
+        .route-info p {
+            margin: 5px 0;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .sidebar {
+            flex: 1;
+            min-width: 300px;
+        }
+        .main-content {
+            flex: 2;
+            min-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div id="map"></div>
+        </div>
+        <div class="sidebar">
+            <div class="legend">
+                <h3>Route Types</h3>
+                <div class="legend-item" data-route-type="CO2 Optimized">
+                    <div class="color-box" style="background: #006400;"></div>
+                    <span>CO2 Optimized Route</span>
+                </div>
+                <div class="legend-item" data-route-type="Time Optimized">
+                    <div class="color-box" style="background: #8B0000;"></div>
+                    <span>Time Optimized Route</span>
+                </div>
+                <div class="legend-item" data-route-type="Balanced">
+                    <div class="color-box" style="background: #00008B;"></div>
+                    <span>Balanced Route</span>
+                </div>
+                <div class="legend-item" data-route-type="Local Roads">
+                    <div class="color-box" style="background: #4B0082;"></div>
+                    <span>Local Roads Route</span>
+                </div>
+                <div class="legend-item" data-route-type="Scenic Route">
+                    <div class="color-box" style="background: #2F4F4F;"></div>
+                    <span>Scenic Route</span>
+                </div>
+            </div>
+            <div class="route-info">
+                <h3>Route Information</h3>
+                <div id="route-details"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map centered on Dublin
+        const map = L.map('map').setView([53.3722, -6.2573], 15);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Define fallback data
+        const fallback_data = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [[-6.2573, 53.3722], [-6.2673, 53.3822]]
+                    },
+                    "properties": {
+                        "route_type": "CO2 Optimized",
+                        "distance": 2.5,
+                        "time": 0.25,
+                        "emissions": 0.5
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [[-6.2573, 53.3722], [-6.2773, 53.3922]]
+                    },
+                    "properties": {
+                        "route_type": "Local Roads",
+                        "distance": 3.0,
+                        "time": 0.35,
+                        "emissions": 0.6
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": [[-6.2573, 53.3722], [-6.2873, 53.4022]]
+                    },
+                    "properties": {
+                        "route_type": "Scenic Route",
+                        "distance": 3.5,
+                        "time": 0.45,
+                        "emissions": 0.7
+                    }
+                }
+            ],
+            "styles": {
+                "CO2 Optimized": {
+                    "route_color": "#006400",
+                    "route_width": 5,
+                    "start_color": "#006400",
+                    "end_color": "#8B0000",
+                    "point_radius": 8
+                },
+                "Time Optimized": {
+                    "route_color": "#8B0000",
+                    "route_width": 5,
+                    "start_color": "#006400",
+                    "end_color": "#8B0000",
+                    "point_radius": 8
+                },
+                "Balanced": {
+                    "route_color": "#00008B",
+                    "route_width": 5,
+                    "start_color": "#006400",
+                    "end_color": "#8B0000",
+                    "point_radius": 8
+                },
+                "Local Roads": {
+                    "route_color": "#4B0082",
+                    "route_width": 5,
+                    "start_color": "#006400",
+                    "end_color": "#8B0000",
+                    "point_radius": 8,
+                    "dashArray": "10, 10"
+                },
+                "Scenic Route": {
+                    "route_color": "#2F4F4F",
+                    "route_width": 5,
+                    "start_color": "#006400",
+                    "end_color": "#8B0000",
+                    "point_radius": 8,
+                    "dashArray": "15, 10, 5, 10"
+                }
+            },
+            "bounds": {
+                "min_lat": 53.3622,
+                "max_lat": 53.4122,
+                "min_lon": -6.2973,
+                "max_lon": -6.2473
+            }
+        };
+
+        // Function to process and display route data
+        function processRouteData(data) {
+            console.log('Processing data:', data);
+            
+            // Create route layers
+            const routeLayers = {};
+            const routeDetails = document.getElementById('route-details');
+            routeDetails.innerHTML = '';
+
+            // Group features by route type
+            const featuresByType = {};
+            data.features.forEach(feature => {
+                if (feature.geometry && feature.geometry.type === 'LineString') {
+                    const routeType = feature.properties.route_type;
+                    if (!featuresByType[routeType]) {
+                        featuresByType[routeType] = [];
+                    }
+                    featuresByType[routeType].push(feature);
+                }
+            });
+
+            // Add each route type to the map
+            Object.entries(featuresByType).forEach(([routeType, features]) => {
+                const style = data.styles[routeType];
+                if (!style) {
+                    console.error('No style found for route type:', routeType);
+                    return;
+                }
+
+                const routeLayer = L.layerGroup();
+                let routeLines = [];
+
+                features.forEach(feature => {
+                    const coordinates = feature.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                    
+                    const line = L.polyline(coordinates, {
+                        color: style.route_color,
+                        weight: style.route_width || 5,
+                        opacity: 0.9,
+                        dashArray: style.dashArray || null
+                    });
+
+                    line.bindPopup(`
+                        <strong>${routeType}</strong><br>
+                        Distance: ${feature.properties.distance.toFixed(2)} km<br>
+                        Time: ${(feature.properties.time * 60).toFixed(0)} minutes<br>
+                        Emissions: ${feature.properties.emissions.toFixed(2)} kg CO2
+                    `);
+
+                    routeLayer.addLayer(line);
+                    routeLines.push(line);
+                });
+
+                routeLayers[routeType] = {
+                    layer: routeLayer,
+                    lines: routeLines
+                };
+                routeLayer.addTo(map);
+
+                // Add route details
+                const totalDistance = features.reduce((sum, f) => sum + f.properties.distance, 0);
+                const totalTime = features.reduce((sum, f) => sum + f.properties.time, 0);
+                const totalEmissions = features.reduce((sum, f) => sum + f.properties.emissions, 0);
+
+                const routeDiv = document.createElement('div');
+                routeDiv.className = 'route-details-item';
+                routeDiv.style.marginBottom = '15px';
+                routeDiv.style.padding = '10px';
+                routeDiv.style.background = '#f8f8f8';
+                routeDiv.style.borderRadius = '4px';
+                routeDiv.innerHTML = `
+                    <h4>${routeType}</h4>
+                    <p>Total Distance: ${totalDistance.toFixed(2)} km</p>
+                    <p>Total Time: ${(totalTime * 60).toFixed(0)} minutes</p>
+                    <p>Total Emissions: ${totalEmissions.toFixed(2)} kg CO2</p>
+                `;
+                routeDetails.appendChild(routeDiv);
+
+                // Initially hide all route details except the first one
+                if (Object.keys(featuresByType)[0] !== routeType) {
+                    routeDiv.style.display = 'none';
+                }
+            });
+
+            // Add click handlers for legend items
+            document.querySelectorAll('.legend-item').forEach(legendItem => {
+                const routeType = legendItem.dataset.routeType;
+                if (routeLayers[routeType]) {
+                    legendItem.addEventListener('click', () => {
+                        // Remove active class from all legend items
+                        document.querySelectorAll('.legend-item').forEach(item => {
+                            item.classList.remove('active');
+                        });
+                        
+                        // Reset all routes to original style
+                        Object.entries(routeLayers).forEach(([type, { lines }]) => {
+                            lines.forEach(line => {
+                                line.setStyle({
+                                    weight: data.styles[type].route_width || 5,
+                                    opacity: 0.9
+                                });
+                            });
+                        });
+                        
+                        // Highlight clicked route
+                        legendItem.classList.add('active');
+                        routeLayers[routeType].lines.forEach(line => {
+                            line.setStyle({
+                                weight: 8,
+                                opacity: 1
+                            });
+                            line.bringToFront();
+                        });
+                        
+                        // Show only selected route details
+                        const routeDivs = document.getElementsByClassName('route-details-item');
+                        Array.from(routeDivs).forEach(div => {
+                            const divRouteType = div.querySelector('h4').textContent;
+                            div.style.display = divRouteType === routeType ? 'block' : 'none';
+                        });
+                    });
+                }
+            });
+
+            // Fit map bounds
+            if (data.bounds) {
+                map.fitBounds([
+                    [data.bounds.min_lat, data.bounds.min_lon],
+                    [data.bounds.max_lat, data.bounds.max_lon]
+                ]);
+            }
+        }
+
+        // Try to load data from file, fall back to sample data if needed
+        fetch('../data/combined_routes_map.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Successfully loaded data from file');
+                processRouteData(data);
+            })
+            .catch(error => {
+                console.log('Using fallback data due to error:', error);
+                processRouteData(fallback_data);
+            });
+    </script>
+</body>
+</html> 
